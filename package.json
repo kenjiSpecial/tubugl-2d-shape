@@ -1,0 +1,19 @@
+{
+  "name": "paracel-prtotype-kit",
+  "version": "1.0.0",
+  "description": "prototype tool with parcel",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "startApp0": "parcel demo/app00/index.html --no-hmr"
+  },
+  "dependencies": {
+    "dat.gui": "https://github.com/dataarts/dat.gui.git",
+    "gsap": "^1.20.3",
+    "parcel-bundler": "https://github.com/mattdesl/parcel.git#feature/add-js-reload",
+    "stats.js": "https://github.com/mrdoob/stats.js.git",
+    "tubugl-constants": "^1.0.3",
+    "tubugl-core": "https://github.com/kenjiSpecial/tubugl-core.git",
+    "wolfy87-eventemitter": "^5.2.4"
+  }
+}
