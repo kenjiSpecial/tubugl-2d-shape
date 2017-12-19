@@ -5,12 +5,13 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "startApp0": "parcel demo/app00/index.html --no-hmr"
+    "startApp0": "parcel demo/examples/index.html --no-hmr"
   },
   "dependencies": {
     "dat.gui": "https://github.com/dataarts/dat.gui.git",
+    "gl-matrix": "^2.4.0",
     "gsap": "^1.20.3",
-    "parcel-bundler": "https://github.com/mattdesl/parcel.git#feature/add-js-reload",
+    "parcel-bundler": "^1.2.1",
     "prettier": "^1.9.2",
     "stats.js": "https://github.com/mrdoob/stats.js.git",
     "tubugl-constants": "^1.0.3",

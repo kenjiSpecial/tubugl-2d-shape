@@ -1,8 +1,11 @@
 export const baseShaderVertSrc = `
 attribute vec4 position;
 
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+
 void main() {
-    gl_Position = position;
+    gl_Position = projectionMatrix * viewMatrix * position;
 }`;
 
 export const baseShaderFragSrc = `
