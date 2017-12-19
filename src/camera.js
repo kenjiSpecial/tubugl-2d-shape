@@ -1,13 +1,8 @@
 const EventEmitter = require('wolfy87-eventemitter');
 import { mat4 } from 'gl-matrix/src/gl-matrix';
 
-/**
- * order of matrix
- * http://www.opengl-tutorial.org/beginners-tutorials/tutorial-3-matrices/
- */
-
 export class Camera extends EventEmitter {
-	constructor(position = [0, 0, 100], rotation = [0, 0, 0]) {
+	constructor(position = [0, 0, 0], rotation = [0, 0, 0]) {
 		super();
 
 		this._position = position;
