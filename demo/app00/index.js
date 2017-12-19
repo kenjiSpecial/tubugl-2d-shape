@@ -3,8 +3,6 @@ const TweenMax = require('gsap');
 const Stats = require('stats.js');
 
 import {Program, ArrayBuffer, IndexArrayBuffer} from 'tubugl-core';
-import {appCall} from '../../index'
-
 
 const vertexShader = `// an attribute will receive data from a buffer
   attribute vec4 a_position;
@@ -32,7 +30,7 @@ export default class App {
         this._width = params.width ? params.width : window.innerWidth;
         this._height = params.height ? params.height : window.innerHeight;
 
-        this.canvas = document.createElement('canvas')
+        this.canvas = document.createElement('canvas');
         this.gl = this.canvas.getContext('webgl');
 
         if(params.isDebug){
@@ -76,7 +74,7 @@ export default class App {
             positionBuffer: this._arrayBuffer,
             indexBuffer: this._indexBuffer,
             count: 6
-        }
+        };
     }
 
     animateIn(){

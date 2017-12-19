@@ -1,11 +1,11 @@
-export const baseShaderVert = `
+export const baseShaderVertSrc = `
 attribute vec4 position;
 
 void main() {
     gl_Position = position;
 }`;
 
-export const baseShaderFrag = `
+export const baseShaderFragSrc = `
 precision mediump float;
 
 void main() {
