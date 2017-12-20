@@ -4,6 +4,6 @@
 
 # TODO
 
-- tweak wire frame mode
+- [] tweak wire frame mode
 
-- add others 2d shapes( circles, triangle )
+- [] add others 2d shapes( circles, triangle )

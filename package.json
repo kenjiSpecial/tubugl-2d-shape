@@ -6,7 +6,9 @@
   "license": "MIT",
   "scripts": {
     "app0": "parcel examples/app0/index.html --no-hmr",
-    "app1": "parcel examples/app1/index.html --no-hmr"
+    "app1": "parcel examples/app1/index.html --no-hmr",
+    "dist0": "parcel build docs/app0/index.html -d examples/dist/app0 --public-url ./",
+    "dist1": "parcel build docs/app1/index.html -d examples/dist/app1 --public-url ./"
   },
   "dependencies": {
     "dat.gui": "https://github.com/dataarts/dat.gui.git",
