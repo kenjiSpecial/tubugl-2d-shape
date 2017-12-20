@@ -1,13 +1,19 @@
 const EventEmitter = require('wolfy87-eventemitter');
 import { mat4 } from 'gl-matrix/src/gl-matrix';
-import { baseShaderFragSrc, baseShaderVertSrc } from './shaders/base.shader';
-import { Program, ArrayBuffer, IndexArrayBuffer } from 'tubugl-core';
+import {
+	baseShaderFragSrc,
+	baseShaderVertSrc,
+	base2ShaderVertSrc,
+	base2ShaderFragSrc
+} from './shaders/base.shader';
+import { Program, ArrayBuffer, IndexArrayBuffer, VAO } from 'tubugl-core';
 import {
 	CULL_FACE,
 	FRONT,
 	BACK,
 	TRIANGLES,
 	LINE_LOOP,
+	LINES,
 	UNSIGNED_SHORT
 } from 'tubugl-constants';
 
@@ -20,29 +26,31 @@ export class Plane extends EventEmitter {
 		segmentH = 1,
 		position = [0, 0, 0],
 		rotation = [0, 0, 0],
+		scale = [1, 1, 1],
 		params = {}
 	) {
 		super();
 
 		this._position = new Float32Array(position);
 		this._rotation = new Float32Array(rotation);
+		this._scale = new Float32Array(scale);
 
-		this._isGL2 = params.isGL2;
+		this._isGl2 = params.isGl2;
 		this._gl = gl;
-
 		this._side = params.side ? params.side : 'double'; // 'front', 'back', 'double'
 
-		let fragmentShaderSrc = params.fragmentShaderSrc
+		const fragmentShaderSrc = params.fragmentShaderSrc
 			? params.fragmentShaderSrc
-			: baseShaderFragSrc;
-		let vertexShaderSrc = params.vertexShaderSrc
+			: this._isGl2 ? base2ShaderFragSrc : baseShaderFragSrc;
+		const vertexShaderSrc = params.vertexShaderSrc
 			? params.vertexShaderSrc
-			: baseShaderVertSrc;
+			: this._isGl2 ? base2ShaderVertSrc : baseShaderVertSrc;
 
 		this._width = width;
 		this._height = height;
 		this._segmentW = segmentW;
 		this._segmentH = segmentH;
+
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 		this._modelMatrix = mat4.create();
 		this._isNeedUpdate = true;
@@ -72,6 +80,10 @@ export class Plane extends EventEmitter {
 	}
 
 	_makBuffer() {
+		if (this._isGl2) {
+			this._vao = new VAO(this._gl);
+			this._vao.bind();
+		}
 		this._positionBuffer = new ArrayBuffer(
 			this._gl,
 			this._getVertice(
@@ -82,6 +94,8 @@ export class Plane extends EventEmitter {
 			)
 		);
 		this._positionBuffer.setAttribs('position', 2);
+
+		if (this._vao) this._positionBuffer.bind().attribPointer(this._program);
 
 		let indices = this._getIndices(this._segmentW, this._segmentH);
 		this._indexBuffer = new IndexArrayBuffer(this._gl, indices);
@@ -94,8 +108,12 @@ export class Plane extends EventEmitter {
 
 		this._program.bind();
 
-		this._positionBuffer.bind().attribPointer(this._program);
-		this._indexBuffer.bind();
+		if (this._vao) {
+			this._vao.bind();
+		} else {
+			this._positionBuffer.bind().attribPointer(this._program);
+			this._indexBuffer.bind();
+		}
 
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('modelMatrix').location,
@@ -112,7 +130,6 @@ export class Plane extends EventEmitter {
 			false,
 			camera.projectionMatrix
 		);
-		// console.log(camera.viewMatrix);
 
 		return this;
 	}
@@ -129,8 +146,8 @@ export class Plane extends EventEmitter {
 		}
 
 		this._gl.drawElements(
-			this._isLine ? LINE_LOOP : TRIANGLES,
-			6,
+			this._isLine ? LINES : TRIANGLES,
+			this._cnt,
 			UNSIGNED_SHORT,
 			0
 		);
@@ -162,28 +179,27 @@ export class Plane extends EventEmitter {
 		let vertices = [];
 		let xRate = 1 / segmentW;
 		let yRate = 1 / segmentH;
-		let xx, yy;
 
 		// set vertices
-		for (yy = 0; yy <= segmentH; yy++) {
+		for (let yy = 0; yy <= segmentH; yy++) {
 			let yPos = (-0.5 + yRate * yy) * height;
-			for (xx = 0; xx <= segmentW; xx++) {
+			for (let xx = 0; xx <= segmentW; xx++) {
 				let xPos = (-0.5 + xRate * xx) * width;
 				vertices.push(xPos);
 				vertices.push(yPos);
 			}
 		}
 		vertices = new Float32Array(vertices);
+		console.log(vertices.length);
 
 		return vertices;
 	}
 
 	_getIndices(segmentW, segmentH) {
 		let indices = [];
-		let xx, yy;
 
-		for (yy = 0; yy < segmentH; yy++) {
-			for (xx = 0; xx < segmentW; xx++) {
+		for (let yy = 0; yy < segmentH; yy++) {
+			for (let xx = 0; xx < segmentW; xx++) {
 				let rowStartNum = yy * (segmentW + 1);
 				let nextRowStartNum = (yy + 1) * (segmentW + 1);
 
