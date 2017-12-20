@@ -12,9 +12,12 @@ import {
 	FRONT,
 	BACK,
 	TRIANGLES,
-	LINE_LOOP,
-	LINES,
-	UNSIGNED_SHORT
+	UNSIGNED_SHORT,
+	DEPTH_TEST,
+	SRC_ALPHA,
+	ONE,
+	ZERO,
+	BLEND
 } from 'tubugl-constants';
 
 export class Plane extends EventEmitter {
@@ -54,7 +57,9 @@ export class Plane extends EventEmitter {
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 		this._modelMatrix = mat4.create();
 		this._isNeedUpdate = true;
-		this._isLine = false;
+		this._isWire = !!params.isWire;
+		this._isDepthTest = !!params.isDepthTest;
+		this._isTransparent = !!params.isTransparent;
 
 		this._makBuffer();
 	}
@@ -86,7 +91,7 @@ export class Plane extends EventEmitter {
 		}
 		this._positionBuffer = new ArrayBuffer(
 			this._gl,
-			this._getVertice(
+			this._getVertices(
 				this._width,
 				this._height,
 				this._segmentW,
@@ -95,7 +100,16 @@ export class Plane extends EventEmitter {
 		);
 		this._positionBuffer.setAttribs('position', 2);
 
-		if (this._vao) this._positionBuffer.bind().attribPointer(this._program);
+		this._barycentricPositionBuffer = new ArrayBuffer(
+			this._gl,
+			this._getBarycentricVertices(this._segmentW, this._segmentH)
+		);
+		this._barycentricPositionBuffer.setAttribs('barycentricPosition', 3);
+
+		if (this._vao) {
+			this._positionBuffer.bind().attribPointer(this._program);
+			this._barycentricPositionBuffer.bind().attribPointer(this._program);
+		}
 
 		let indices = this._getIndices(this._segmentW, this._segmentH);
 		this._indexBuffer = new IndexArrayBuffer(this._gl, indices);
@@ -112,9 +126,14 @@ export class Plane extends EventEmitter {
 			this._vao.bind();
 		} else {
 			this._positionBuffer.bind().attribPointer(this._program);
+			this._barycentricPositionBuffer.bind().attribPointer(this._program);
 			this._indexBuffer.bind();
 		}
 
+		this._gl.uniform1f(
+			this._program.getUniforms('uWireframe').location,
+			this._isWire
+		);
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('modelMatrix').location,
 			false,
@@ -145,12 +164,18 @@ export class Plane extends EventEmitter {
 			this._gl.cullFace(FRONT);
 		}
 
-		this._gl.drawElements(
-			this._isLine ? LINES : TRIANGLES,
-			this._cnt,
-			UNSIGNED_SHORT,
-			0
-		);
+		if (this._isDepthTest) this._gl.enable(DEPTH_TEST);
+		else this._gl.disable(DEPTH_TEST);
+
+		if (this._isTransparent) {
+			this._gl.blendFunc(SRC_ALPHA, ONE);
+			this._gl.enable(BLEND);
+		} else {
+			this._gl.blendFunc(SRC_ALPHA, ZERO);
+			this._gl.disable(BLEND);
+		}
+
+		this._gl.drawElements(TRIANGLES, this._cnt, UNSIGNED_SHORT, 0);
 
 		return this;
 	}
@@ -158,13 +183,14 @@ export class Plane extends EventEmitter {
 	resize() {}
 
 	addGui(gui) {
-		gui.add(this, '_isLine').name('isLine');
+		gui.add(this, '_isWire').name('isWire');
 	}
 
 	_updateModelMatrix() {
 		if (!this._isNeedUpdate) return;
 
 		mat4.fromTranslation(this._modelMatrix, this._position);
+		mat4.scale(this._modelMatrix, this._modelMatrix, this._scale);
 
 		mat4.rotateX(this._modelMatrix, this._modelMatrix, this._rotation[0]);
 		mat4.rotateY(this._modelMatrix, this._modelMatrix, this._rotation[1]);
@@ -175,14 +201,15 @@ export class Plane extends EventEmitter {
 		return this;
 	}
 
-	_getVertice(width, height, segmentW, segmentH) {
+	_getVertices(width, height, segmentW, segmentH) {
 		let vertices = [];
 		let xRate = 1 / segmentW;
 		let yRate = 1 / segmentH;
 
-		// set vertices
+		// set vertices and barycentric vertices
 		for (let yy = 0; yy <= segmentH; yy++) {
 			let yPos = (-0.5 + yRate * yy) * height;
+
 			for (let xx = 0; xx <= segmentW; xx++) {
 				let xPos = (-0.5 + xRate * xx) * width;
 				vertices.push(xPos);
@@ -190,9 +217,40 @@ export class Plane extends EventEmitter {
 			}
 		}
 		vertices = new Float32Array(vertices);
-		console.log(vertices.length);
 
 		return vertices;
+	}
+
+	_getBarycentricVertices(segmentW, segmentH) {
+		let barycentricVertices = [];
+		let barycentricId;
+
+		for (let yy = 0; yy <= segmentH; yy++) {
+			for (let xx = 0; xx <= segmentW; xx++) {
+				barycentricId = 2 * yy + xx;
+				switch (barycentricId % 3) {
+					case 0:
+						barycentricVertices.push(1);
+						barycentricVertices.push(0);
+						barycentricVertices.push(0);
+						break;
+					case 1:
+						barycentricVertices.push(0);
+						barycentricVertices.push(1);
+						barycentricVertices.push(0);
+						break;
+					case 2:
+						barycentricVertices.push(0);
+						barycentricVertices.push(0);
+						barycentricVertices.push(1);
+						break;
+				}
+			}
+		}
+
+		barycentricVertices = new Float32Array(barycentricVertices);
+
+		return barycentricVertices;
 	}
 
 	_getIndices(segmentW, segmentH) {

@@ -40,7 +40,7 @@ export default class App {
 		if (this.stats) this.stats.update();
 
 		this.gl.clearColor(0, 0, 0, 1);
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
 		this._camera
 			.updatePosition(
@@ -51,8 +51,11 @@ export default class App {
 			.lookAt([0, 0, 0]);
 
 		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
+
+		let gl = this.gl;
+
 		this._plane
-			.setPosition(100 * Math.cos(this._plane.rotTheta), 0, 0)
+			.setPosition(0, 0, 0)
 			.setRotation(this._plane.rotTheta, 0, 0)
 			.update(this._camera)
 			.draw();
@@ -119,7 +122,7 @@ export default class App {
 			2, // height segment
 			[0, 0, 0], // position
 			[0, 0, 0], // rotation
-			[1, 1, 1], // scale
+			[3, 1, 0.5], // scale
 			{
 				isGl2: this._isGl2
 			}
