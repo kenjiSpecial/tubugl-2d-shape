@@ -6,7 +6,8 @@ const dat = require('dat.gui/build/dat.gui.min');
 const TweenLite = require('gsap/TweenLite');
 const Stats = require('stats.js');
 
-import { Plane, Camera } from '../../index';
+import { Plane } from '../../index';
+import { PerspectiveCamera } from 'tubugl-camera';
 
 export default class App {
 	constructor(params = {}) {
@@ -51,8 +52,6 @@ export default class App {
 			.lookAt([0, 0, 0]);
 
 		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
-
-		let gl = this.gl;
 
 		this._plane
 			.setPosition(0, 0, 0)
@@ -132,7 +131,7 @@ export default class App {
 	}
 
 	_makeCamera() {
-		this._camera = new Camera([0, 0, 500], [0, 0, 0]);
+		this._camera = new PerspectiveCamera([0, 0, 500], [0, 0, 0]);
 		this._camera.theta = 0;
 		this._camera.rad1 = 800;
 		this._camera.rad2 = 800;
