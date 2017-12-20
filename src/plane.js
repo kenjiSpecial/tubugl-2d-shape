@@ -1,5 +1,5 @@
 const EventEmitter = require('wolfy87-eventemitter');
-
+import { mat4 } from 'gl-matrix/src/gl-matrix';
 import { baseShaderFragSrc, baseShaderVertSrc } from './shaders/base.shader';
 import { Program, ArrayBuffer, IndexArrayBuffer } from 'tubugl-core';
 
@@ -10,9 +10,14 @@ export class Plane extends EventEmitter {
 		height = 100,
 		segmentW = 1,
 		segmentH = 1,
+		position = [0, 0, 0],
+		rotation = [0, 0, 0],
 		params = {}
 	) {
 		super();
+
+		this._position = new Float32Array(position);
+		this._rotation = new Float32Array(rotation);
 
 		this._isGL2 = params.isGL2;
 		this._gl = gl;
@@ -30,9 +35,28 @@ export class Plane extends EventEmitter {
 		this._height = height;
 		this._segmentW = segmentW;
 		this._segmentH = segmentH;
-
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
+		this._modelMatrix = mat4.create();
+		this._isNeedUpdate = true;
+
 		this._makBuffer();
+	}
+
+	_updateModelMatrix() {
+		if (!this._isNeedUpdate) return;
+
+		mat4.fromTranslation(this._modelMatrix, this._position);
+
+		mat4.rotateX(this._modelMatrix, this._modelMatrix, this._rotation[0]);
+		mat4.rotateY(this._modelMatrix, this._modelMatrix, this._rotation[1]);
+		mat4.rotateZ(this._modelMatrix, this._modelMatrix, this._rotation[2]);
+
+		// console.log(this._rotation);
+		// console.log(this._position);
+
+		this._isNeedUpdate = false;
+
+		return this;
 	}
 
 	_getVertice(width, height, segmentW, segmentH) {
@@ -79,6 +103,26 @@ export class Plane extends EventEmitter {
 		return indices;
 	}
 
+	setPosition(x, y, z) {
+		this._isNeedUpdate = true;
+
+		if (x !== undefined) this._position[0] = x;
+		if (y !== undefined) this._position[1] = y;
+		if (z !== undefined) this._position[2] = z;
+
+		return this;
+	}
+
+	setRotation(x, y, z) {
+		this._isNeedUpdate = true;
+
+		if (x !== undefined) this._rotation[0] = x;
+		if (y !== undefined) this._rotation[1] = y;
+		if (z !== undefined) this._rotation[2] = z;
+
+		return this;
+	}
+
 	_makBuffer() {
 		this._positionBuffer = new ArrayBuffer(
 			this._gl,
@@ -98,21 +142,29 @@ export class Plane extends EventEmitter {
 	}
 
 	update(camera) {
+		this._updateModelMatrix();
+
 		this._program.bind();
 
 		this._positionBuffer.bind().attribPointer(this._program);
 		this._indexBuffer.bind();
 
 		this._gl.uniformMatrix4fv(
-			this._program.getUniforms('projectionMatrix').location,
+			this._program.getUniforms('modelMatrix').location,
 			false,
-			camera.projectionMatrix
+			this._modelMatrix
 		);
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('viewMatrix').location,
 			false,
 			camera.viewMatrix
 		);
+		this._gl.uniformMatrix4fv(
+			this._program.getUniforms('projectionMatrix').location,
+			false,
+			camera.projectionMatrix
+		);
+		// console.log(camera.viewMatrix);
 
 		return this;
 	}

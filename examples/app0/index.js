@@ -10,8 +10,10 @@ import { Plane, Camera } from '../../index';
 
 export default class App {
 	constructor(params = {}) {
+		this._isMouseDown = false;
 		this._width = params.width ? params.width : window.innerWidth;
 		this._height = params.height ? params.height : window.innerHeight;
+		this._isPlaneAnimation = true;
 
 		this.canvas = document.createElement('canvas');
 		this.gl = this.canvas.getContext('webgl');
@@ -39,7 +41,6 @@ export default class App {
 		this.gl.clearColor(0, 0, 0, 1);
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-		this._camera.theta += 1 / 60;
 		this._camera
 			.updatePosition(
 				this._camera.rad1 * Math.sin(this._camera.theta),
@@ -48,14 +49,33 @@ export default class App {
 			)
 			.lookAt([0, 0, 0]);
 
-		this._plane.update(this._camera).draw();
+		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
+		this._plane
+			.setPosition(100 * Math.cos(this._plane.rotTheta), 0, 0)
+			.setRotation(this._plane.rotTheta, 0, 0)
+			.update(this._camera)
+			.draw();
 	}
 
 	animateOut() {
 		TweenLite.ticker.removeEventListener('tick', this.loop, this);
 	}
 
-	onMouseMove(mouse) {}
+	mouseMoveHandler(mouse) {
+		if (!this._isMouseDown) return;
+		this._camera.theta += (mouse.x - this._prevMouse.x) * Math.PI * 2;
+
+		this._prevMouse = mouse;
+	}
+
+	mouseDownHandler(mouse) {
+		this._isMouseDown = true;
+		this._prevMouse = mouse;
+	}
+
+	mouseupHandler() {
+		this._isMouseDown = false;
+	}
 
 	onKeyDown(ev) {
 		switch (ev.which) {
@@ -91,18 +111,22 @@ export default class App {
 
 	_makePlanes() {
 		this._plane = new Plane(this.gl);
+		this._plane.posTheta = 0;
+		this._plane.rotTheta = 0;
 	}
 
 	_makeCamera() {
-		console.log('makeCamera');
 		this._camera = new Camera([0, 0, 500], [0, 0, 0]);
 		this._camera.theta = 0;
-		this._camera.rad1 = 300;
-		this._camera.rad2 = 500;
+		this._camera.rad1 = 800;
+		this._camera.rad2 = 800;
 	}
 
 	_addGui() {
 		this.gui = new dat.GUI();
 		this.playAndStopGui = this.gui.add(this, '_playAndStop').name('pause');
+		this._planeGUIFolder = this.gui.addFolder('plane');
+		this._planeGUIFolder.add(this, '_isPlaneAnimation').name('animation');
+		this._planeGUIFolder.open();
 	}
 }

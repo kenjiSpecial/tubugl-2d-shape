@@ -83,6 +83,8 @@ export class Camera extends EventEmitter {
 		mat4.rotateX(this.viewMatrix, this.viewMatrix, this._rotation[1]);
 		mat4.rotateX(this.viewMatrix, this.viewMatrix, this._rotation[2]);
 
+		mat4.invert(this.viewMatrix, this.viewMatrix);
+
 		return this;
 	}
 }
