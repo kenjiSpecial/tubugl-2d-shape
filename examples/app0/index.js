@@ -39,6 +39,15 @@ export default class App {
 		this.gl.clearColor(0, 0, 0, 1);
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
+		this._camera.theta += 1 / 60;
+		this._camera
+			.updatePosition(
+				this._camera.rad1 * Math.sin(this._camera.theta),
+				0,
+				this._camera.rad2 * Math.cos(this._camera.theta)
+			)
+			.lookAt([0, 0, 0]);
+
 		this._plane.update(this._camera).draw();
 	}
 
@@ -85,7 +94,11 @@ export default class App {
 	}
 
 	_makeCamera() {
-		this._camera = new Camera([0, 0, 300], [0, 0, 0]);
+		console.log('makeCamera');
+		this._camera = new Camera([0, 0, 500], [0, 0, 0]);
+		this._camera.theta = 0;
+		this._camera.rad1 = 300;
+		this._camera.rad2 = 500;
 	}
 
 	_addGui() {
