@@ -1,5 +1,5 @@
 /**
- * make demo with rendering of plane
+ * make demo with rendering of plane(webgl)
  */
 
 const dat = require('dat.gui/build/dat.gui.min');
@@ -11,23 +11,23 @@ import { Plane, Camera } from '../../index';
 export default class App {
 	constructor(params = {}) {
 		this._isMouseDown = false;
+		this._isPlaneAnimation = false;
 		this._width = params.width ? params.width : window.innerWidth;
 		this._height = params.height ? params.height : window.innerHeight;
-		this._isPlaneAnimation = true;
 
 		this.canvas = document.createElement('canvas');
 		this.gl = this.canvas.getContext('webgl');
+
+		this._makePlanes();
+		this._makeCamera();
+
+		this.resize(this._width, this._height);
 
 		if (params.isDebug) {
 			this.stats = new Stats();
 			document.body.appendChild(this.stats.dom);
 			this._addGui();
 		}
-
-		this._makePlanes();
-		this._makeCamera();
-
-		this.resize(this._width, this._height);
 	}
 
 	animateIn() {
@@ -127,6 +127,7 @@ export default class App {
 		this.playAndStopGui = this.gui.add(this, '_playAndStop').name('pause');
 		this._planeGUIFolder = this.gui.addFolder('plane');
 		this._planeGUIFolder.add(this, '_isPlaneAnimation').name('animation');
+		this._plane.addGui(this._planeGUIFolder);
 		this._planeGUIFolder.open();
 	}
 }

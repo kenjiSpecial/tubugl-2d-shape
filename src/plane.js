@@ -2,6 +2,14 @@ const EventEmitter = require('wolfy87-eventemitter');
 import { mat4 } from 'gl-matrix/src/gl-matrix';
 import { baseShaderFragSrc, baseShaderVertSrc } from './shaders/base.shader';
 import { Program, ArrayBuffer, IndexArrayBuffer } from 'tubugl-core';
+import {
+	CULL_FACE,
+	FRONT,
+	BACK,
+	TRIANGLES,
+	LINE_LOOP,
+	UNSIGNED_SHORT
+} from 'tubugl-constants';
 
 export class Plane extends EventEmitter {
 	constructor(
@@ -38,69 +46,9 @@ export class Plane extends EventEmitter {
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 		this._modelMatrix = mat4.create();
 		this._isNeedUpdate = true;
+		this._isLine = false;
 
 		this._makBuffer();
-	}
-
-	_updateModelMatrix() {
-		if (!this._isNeedUpdate) return;
-
-		mat4.fromTranslation(this._modelMatrix, this._position);
-
-		mat4.rotateX(this._modelMatrix, this._modelMatrix, this._rotation[0]);
-		mat4.rotateY(this._modelMatrix, this._modelMatrix, this._rotation[1]);
-		mat4.rotateZ(this._modelMatrix, this._modelMatrix, this._rotation[2]);
-
-		// console.log(this._rotation);
-		// console.log(this._position);
-
-		this._isNeedUpdate = false;
-
-		return this;
-	}
-
-	_getVertice(width, height, segmentW, segmentH) {
-		let vertices = [];
-		let xRate = 1 / segmentW;
-		let yRate = 1 / segmentH;
-		let xx, yy;
-
-		// set vertices
-		for (yy = 0; yy <= segmentH; yy++) {
-			let yPos = (-0.5 + yRate * yy) * height;
-			for (xx = 0; xx <= segmentW; xx++) {
-				let xPos = (-0.5 + xRate * xx) * width;
-				vertices.push(xPos);
-				vertices.push(yPos);
-			}
-		}
-		vertices = new Float32Array(vertices);
-
-		return vertices;
-	}
-
-	_getIndices(segmentW, segmentH) {
-		let indices = [];
-		let xx, yy;
-
-		for (yy = 0; yy < segmentH; yy++) {
-			for (xx = 0; xx < segmentW; xx++) {
-				let rowStartNum = yy * (segmentW + 1);
-				let nextRowStartNum = (yy + 1) * (segmentW + 1);
-
-				indices.push(rowStartNum + xx);
-				indices.push(rowStartNum + xx + 1);
-				indices.push(nextRowStartNum + xx);
-
-				indices.push(rowStartNum + xx + 1);
-				indices.push(nextRowStartNum + xx + 1);
-				indices.push(nextRowStartNum + xx);
-			}
-		}
-
-		indices = new Uint16Array(indices);
-
-		return indices;
 	}
 
 	setPosition(x, y, z) {
@@ -171,19 +119,86 @@ export class Plane extends EventEmitter {
 
 	draw() {
 		if (this._side === 'double') {
-			this._gl.disable(this._gl.CULL_FACE);
+			this._gl.disable(CULL_FACE);
 		} else if (this._side === 'front') {
-			this._gl.enable(this._gl.CULL_FACE);
-			this._gl.cullFace(this._gl.BACK);
+			this._gl.enable(CULL_FACE);
+			this._gl.cullFace(BACK);
 		} else {
-			this._gl.enable(this._gl.CULL_FACE);
-			this._gl.cullFace(this._gl.FRONT);
+			this._gl.enable(CULL_FACE);
+			this._gl.cullFace(FRONT);
 		}
 
-		this._gl.drawElements(this._gl.TRIANGLES, 6, this._gl.UNSIGNED_SHORT, 0);
+		this._gl.drawElements(
+			this._isLine ? LINE_LOOP : TRIANGLES,
+			6,
+			UNSIGNED_SHORT,
+			0
+		);
 
 		return this;
 	}
 
 	resize() {}
+
+	addGui(gui) {
+		gui.add(this, '_isLine').name('isLine');
+	}
+
+	_updateModelMatrix() {
+		if (!this._isNeedUpdate) return;
+
+		mat4.fromTranslation(this._modelMatrix, this._position);
+
+		mat4.rotateX(this._modelMatrix, this._modelMatrix, this._rotation[0]);
+		mat4.rotateY(this._modelMatrix, this._modelMatrix, this._rotation[1]);
+		mat4.rotateZ(this._modelMatrix, this._modelMatrix, this._rotation[2]);
+
+		this._isNeedUpdate = false;
+
+		return this;
+	}
+
+	_getVertice(width, height, segmentW, segmentH) {
+		let vertices = [];
+		let xRate = 1 / segmentW;
+		let yRate = 1 / segmentH;
+		let xx, yy;
+
+		// set vertices
+		for (yy = 0; yy <= segmentH; yy++) {
+			let yPos = (-0.5 + yRate * yy) * height;
+			for (xx = 0; xx <= segmentW; xx++) {
+				let xPos = (-0.5 + xRate * xx) * width;
+				vertices.push(xPos);
+				vertices.push(yPos);
+			}
+		}
+		vertices = new Float32Array(vertices);
+
+		return vertices;
+	}
+
+	_getIndices(segmentW, segmentH) {
+		let indices = [];
+		let xx, yy;
+
+		for (yy = 0; yy < segmentH; yy++) {
+			for (xx = 0; xx < segmentW; xx++) {
+				let rowStartNum = yy * (segmentW + 1);
+				let nextRowStartNum = (yy + 1) * (segmentW + 1);
+
+				indices.push(rowStartNum + xx);
+				indices.push(rowStartNum + xx + 1);
+				indices.push(nextRowStartNum + xx);
+
+				indices.push(rowStartNum + xx + 1);
+				indices.push(nextRowStartNum + xx + 1);
+				indices.push(nextRowStartNum + xx);
+			}
+		}
+
+		indices = new Uint16Array(indices);
+
+		return indices;
+	}
 }
