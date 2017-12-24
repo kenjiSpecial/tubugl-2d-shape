@@ -51,11 +51,8 @@ export default class App {
 			.lookAt([0, 0, 0]);
 
 		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
-		this._plane
-			.setPosition(100 * Math.cos(this._plane.rotTheta), 0, 0)
-			.setRotation(this._plane.rotTheta, 0, 0)
-			.update(this._camera)
-			.draw();
+
+		this._plane.setRotation(this._plane.rotTheta, 0, 0).render(this._camera);
 	}
 
 	animateOut() {
@@ -106,18 +103,19 @@ export default class App {
 		this.gl.viewport(0, 0, this._width, this._height);
 
 		this._plane.resize(this._width, this._height);
+		this._camera.updateSize(this._width, this._height);
 	}
 
 	destroy() {}
 
 	_makePlanes() {
-		this._plane = new Plane(this.gl);
+		this._plane = new Plane(this.gl, 200, 200, 20, 20);
 		this._plane.posTheta = 0;
 		this._plane.rotTheta = 0;
 	}
 
 	_makeCamera() {
-		this._camera = new PerspectiveCamera([0, 0, 500], [0, 0, 0]);
+		this._camera = new PerspectiveCamera();
 		this._camera.theta = 0;
 		this._camera.rad1 = 800;
 		this._camera.rad2 = 800;
