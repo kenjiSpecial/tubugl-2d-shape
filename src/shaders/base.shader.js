@@ -5,18 +5,12 @@ uniform mat4 projectionMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 
-varying vec3 vBarycentricPosition;
-
 void main() {
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * position;
-    
 }`;
 
 export const baseShaderFragSrc = `
 precision mediump float;
-
-uniform bool uWireframe;
-
 
 void main() {
     float colorR = gl_FrontFacing ? 1.0 : 0.0;
@@ -25,6 +19,51 @@ void main() {
     gl_FragColor = vec4(colorR, colorG, 0.0, 1.0);
 
 }`;
+
+export const uvBaseShaderVertSrc = `
+attribute vec4 position;
+attribute vec2 uv;
+
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
+
+varying vec2 vUv;
+void main(){
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * position;
+    vUv = uv;
+}
+`;
+
+export const uvBaseShaderFragSrc = `
+precision mediump float;
+
+varying vec2 vUv;
+void main() {
+    float colorR = gl_FrontFacing ? 1.0 : 0.0;
+    
+    gl_FragColor = vec4(vUv, colorR, 1.0);
+
+}
+`;
+
+export const textureBaseShaderFragSrc = `
+precision mediump float;
+
+uniform sampler2D uTexture;
+uniform sampler2D uvTexture;
+
+varying vec2 vUv;
+
+void main(){
+    if(gl_FrontFacing){
+        gl_FragColor = texture2D(uTexture, vUv);
+    }else{
+        gl_FragColor = texture2D(uvTexture, vUv);
+    }
+}
+
+`;
 
 export const wireFrameFragSrc = `
 precision mediump float;

@@ -1,11 +1,13 @@
 'use strict';
 
-import App from './index';
+import App from './app';
 
 let app;
 
-init();
-start();
+(() => {
+	init();
+	start();
+})();
 
 function init() {
 	app = new App({

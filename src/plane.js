@@ -22,14 +22,15 @@ import {
 	LINES
 } from 'tubugl-constants';
 import { generateWireframeIndices } from 'tubugl-utils';
-import { Vector3 } from 'tubugl-math';
+import { Vector3 } from 'tubugl-math/src/vector3';
+import { Euler } from 'tubugl-math/src/euler';
 
 export class Plane extends EventEmitter {
 	constructor(gl, width = 100, height = 100, segmentW = 1, segmentH = 1, params = {}) {
 		super();
 
 		this.position = new Vector3();
-		this.rotation = new Vector3();
+		this.rotation = new Euler();
 		this.scale = new Vector3(1, 1, 1);
 
 		this._isGl2 = params.isGl2;
@@ -98,7 +99,7 @@ export class Plane extends EventEmitter {
 		}
 		this._positionBuffer = new ArrayBuffer(
 			this._gl,
-			this._getVertices(this._width, this._height, this._segmentW, this._segmentH)
+			Plane.getVertices(this._width, this._height, this._segmentW, this._segmentH)
 		);
 		this._positionBuffer.setAttribs('position', 2);
 
@@ -106,7 +107,7 @@ export class Plane extends EventEmitter {
 			this._positionBuffer.bind().attribPointer(this._program);
 		}
 
-		let indices = this._getIndices(this._segmentW, this._segmentH);
+		let indices = Plane.getIndices(this._segmentW, this._segmentH);
 		this._indexBuffer = new IndexArrayBuffer(this._gl, indices);
 
 		this._cnt = indices.length;
@@ -120,6 +121,15 @@ export class Plane extends EventEmitter {
 		this._wireframeIndexCnt = this._wireframeIndexBuffer.dataArray.length;
 	}
 
+	_updateAttributres() {
+		if (this._vao) {
+			this._vao.bind();
+		} else {
+			this._positionBuffer.bind().attribPointer(this._program);
+			this._indexBuffer.bind();
+		}
+	}
+
 	render(camera) {
 		this.update(camera).draw();
 		if (this._isWire) this.updateWire(camera).drawWireframe();
@@ -130,12 +140,7 @@ export class Plane extends EventEmitter {
 
 		this._program.bind();
 
-		if (this._vao) {
-			this._vao.bind();
-		} else {
-			this._positionBuffer.bind().attribPointer(this._program);
-			this._indexBuffer.bind();
-		}
+		this._updateAttributres();
 
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('modelMatrix').location,
@@ -214,6 +219,21 @@ export class Plane extends EventEmitter {
 	resize() {}
 
 	addGui(gui) {
+		let positionFolder = gui.addFolder('position');
+		positionFolder.add(this.position, 'x', -200, 200);
+		positionFolder.add(this.position, 'y', -200, 200);
+		positionFolder.add(this.position, 'z', -200, 200);
+
+		let scaleFolder = gui.addFolder('scale');
+		scaleFolder.add(this.scale, 'x', 0.05, 2).step(0.01);
+		scaleFolder.add(this.scale, 'y', 0.05, 2).step(0.01);
+		scaleFolder.add(this.scale, 'z', 0.05, 2).step(0.01);
+
+		let rotationFolder = gui.addFolder('rotation');
+		rotationFolder.add(this.rotation, 'x', -Math.PI, Math.PI).step(0.01);
+		rotationFolder.add(this.rotation, 'y', -Math.PI, Math.PI).step(0.01);
+		rotationFolder.add(this.rotation, 'z', -Math.PI, Math.PI).step(0.01);
+
 		gui
 			.add(this, '_isWire')
 			.name('isWire')
@@ -229,7 +249,7 @@ export class Plane extends EventEmitter {
 		if (
 			!this._isNeedUpdate &&
 			!this.position.needsUpdate &&
-			!this.rotation.needsUpdate &&
+			!this.rotation.needsMatrixUpdate &&
 			!this.scale.needsUpdate
 		)
 			return;
@@ -237,19 +257,17 @@ export class Plane extends EventEmitter {
 		mat4.fromTranslation(this._modelMatrix, this.position.array);
 		mat4.scale(this._modelMatrix, this._modelMatrix, this.scale.array);
 
-		mat4.rotateX(this._modelMatrix, this._modelMatrix, this.rotation.array[0]);
-		mat4.rotateY(this._modelMatrix, this._modelMatrix, this.rotation.array[1]);
-		mat4.rotateZ(this._modelMatrix, this._modelMatrix, this.rotation.array[2]);
+		this.rotation.updateMatrix();
+		mat4.multiply(this._modelMatrix, this._modelMatrix, this.rotation.matrix);
 
 		this._isNeedUpdate = false;
 		this.position.needsUpdate = false;
-		this.rotation.needsUpdate = false;
 		this.scale.needsUpdate = false;
 
 		return this;
 	}
 
-	_getVertices(width, height, segmentW, segmentH) {
+	static getVertices(width, height, segmentW, segmentH) {
 		let vertices = [];
 		let xRate = 1 / segmentW;
 		let yRate = 1 / segmentH;
@@ -269,7 +287,7 @@ export class Plane extends EventEmitter {
 		return vertices;
 	}
 
-	_getIndices(segmentW, segmentH) {
+	static getIndices(segmentW, segmentH) {
 		let indices = [];
 
 		for (let yy = 0; yy < segmentH; yy++) {

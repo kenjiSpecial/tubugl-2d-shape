@@ -6,8 +6,13 @@ const dat = require('dat.gui/build/dat.gui.min');
 const TweenLite = require('gsap/TweenLite');
 const Stats = require('stats.js');
 
-import { Plane } from '../../index';
+import imageURL from '../assets/image.jpg';
+import uvImageURL from '../assets/uv_img.jpg';
+
+import { TexturePlane } from '../../index';
+
 import { PerspectiveCamera, CameraController } from 'tubugl-camera';
+import { Texture } from 'tubugl-core/src/texture';
 
 export default class App {
 	constructor(params = {}) {
@@ -19,22 +24,59 @@ export default class App {
 		this.canvas = document.createElement('canvas');
 		this.gl = this.canvas.getContext('webgl');
 
-		this._makePlanes();
 		this._makeCamera();
 		this._makeCameraController();
 
+		this._isDebug = params.isDebug;
+	}
+
+	_onload() {
+		this._imageCnt++;
+		if (this._imageCnt == 2) this._loaded();
+	}
+
+	_loaded() {
+		this._texture = new Texture(this.gl, 'uTexture');
+		this._texture
+			.bind()
+			.setFilter()
+			.wrap()
+			.fromImage(this._image, this._image.width, this._image.height);
+
+		this._uvTexture = new Texture(this.gl, 'uvTexture');
+		this._uvTexture
+			.bind()
+			.setFilter()
+			.wrap()
+			.fromImage(this._uvImage, this._uvImage.width, this._uvImage.height);
+
+		this._makePlanes();
+
 		this.resize(this._width, this._height);
 
-		if (params.isDebug) {
+		if (this._isDebug) {
 			this.stats = new Stats();
 			document.body.appendChild(this.stats.dom);
 			this._addGui();
 		}
+
+		this.isLoop = true;
+		TweenLite.ticker.addEventListener('tick', this.loop, this);
 	}
 
 	animateIn() {
-		this.isLoop = true;
-		TweenLite.ticker.addEventListener('tick', this.loop, this);
+		this._imageCnt = 0;
+		this._uvImage = new Image();
+		this._uvImage.onload = () => {
+			this._onload();
+		};
+		this._uvImage.src = uvImageURL;
+
+		this._image = new Image();
+		this._image.onload = () => {
+			this._onload();
+		};
+		this._image.src = imageURL;
 	}
 
 	loop() {
@@ -44,9 +86,7 @@ export default class App {
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
 		this._camera.update();
-		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
-
-		this._plane.setRotation(this._plane.rotTheta, 0, 0).render(this._camera);
+		this._plane.render(this._camera);
 	}
 
 	animateOut() {
@@ -103,9 +143,9 @@ export default class App {
 	destroy() {}
 
 	_makePlanes() {
-		this._plane = new Plane(this.gl, 200, 200, 20, 20);
-		this._plane.posTheta = 0;
-		this._plane.rotTheta = 0;
+		this._plane = new TexturePlane(this.gl, 200, 200, 20, 20, {
+			textures: [this._texture, this._uvTexture]
+		});
 	}
 
 	_makeCamera() {
@@ -119,7 +159,6 @@ export default class App {
 		this.gui = new dat.GUI();
 		this.playAndStopGui = this.gui.add(this, '_playAndStop').name('pause');
 		this._planeGUIFolder = this.gui.addFolder('plane');
-		this._planeGUIFolder.add(this, '_isPlaneAnimation').name('animation');
 		this._plane.addGui(this._planeGUIFolder);
 		this._planeGUIFolder.open();
 	}
