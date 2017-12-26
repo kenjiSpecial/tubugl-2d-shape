@@ -7,7 +7,7 @@ const TweenLite = require('gsap/TweenLite');
 const Stats = require('stats.js');
 
 import { Plane } from '../../index';
-import { PerspectiveCamera } from 'tubugl-camera';
+import { PerspectiveCamera, CameraController } from 'tubugl-camera';
 
 export default class App {
 	constructor(params = {}) {
@@ -21,6 +21,7 @@ export default class App {
 
 		this._makePlanes();
 		this._makeCamera();
+		this._makeCameraController();
 
 		this.resize(this._width, this._height);
 
@@ -42,14 +43,7 @@ export default class App {
 		this.gl.clearColor(0, 0, 0, 1);
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
-		this._camera
-			.updatePosition(
-				this._camera.rad1 * Math.sin(this._camera.theta),
-				0,
-				this._camera.rad2 * Math.cos(this._camera.theta)
-			)
-			.lookAt([0, 0, 0]);
-
+		this._camera.update();
 		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
 
 		this._plane.setRotation(this._plane.rotTheta, 0, 0).render(this._camera);
@@ -116,11 +110,11 @@ export default class App {
 
 	_makeCamera() {
 		this._camera = new PerspectiveCamera();
-		this._camera.theta = 0;
-		this._camera.rad1 = 800;
-		this._camera.rad2 = 800;
+		this._camera.position.z = 800;
 	}
-
+	_makeCameraController() {
+		this._cameraController = new CameraController(this._camera, this.canvas);
+	}
 	_addGui() {
 		this.gui = new dat.GUI();
 		this.playAndStopGui = this.gui.add(this, '_playAndStop').name('pause');
