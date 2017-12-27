@@ -39,16 +39,14 @@ export default class App {
 		this._texture = new Texture(this.gl, 'uTexture');
 		this._texture
 			.bind()
-			.setFilter()
-			.wrap()
-			.fromImage(this._image, this._image.width, this._image.height);
+			.fromImage(this._image, this._image.width, this._image.height)
+			.generateMipmap();
 
 		this._uvTexture = new Texture(this.gl, 'uvTexture');
 		this._uvTexture
 			.bind()
-			.setFilter()
-			.wrap()
-			.fromImage(this._uvImage, this._uvImage.width, this._uvImage.height);
+			.fromImage(this._uvImage, this._uvImage.width, this._uvImage.height)
+			.generateMipmap();
 
 		this._makePlanes();
 
