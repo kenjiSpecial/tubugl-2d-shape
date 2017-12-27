@@ -26,7 +26,7 @@ import { Vector3 } from 'tubugl-math/src/vector3';
 import { Euler } from 'tubugl-math/src/euler';
 
 export class Plane extends EventEmitter {
-	constructor(gl, width = 100, height = 100, segmentW = 1, segmentH = 1, params = {}) {
+	constructor(gl, width = 100, height = 100, widthSegment = 1, heightSegment = 1, params = {}) {
 		super();
 
 		this.position = new Vector3();
@@ -39,8 +39,8 @@ export class Plane extends EventEmitter {
 
 		this._width = width;
 		this._height = height;
-		this._segmentW = segmentW;
-		this._segmentH = segmentH;
+		this._widthSegment = widthSegment;
+		this._heightSegment = heightSegment;
 
 		this._modelMatrix = mat4.create();
 		this._isNeedUpdate = true;
@@ -99,7 +99,7 @@ export class Plane extends EventEmitter {
 		}
 		this._positionBuffer = new ArrayBuffer(
 			this._gl,
-			Plane.getVertices(this._width, this._height, this._segmentW, this._segmentH)
+			Plane.getVertices(this._width, this._height, this._widthSegment, this._heightSegment)
 		);
 		this._positionBuffer.setAttribs('position', 2);
 
@@ -107,7 +107,7 @@ export class Plane extends EventEmitter {
 			this._positionBuffer.bind().attribPointer(this._program);
 		}
 
-		let indices = Plane.getIndices(this._segmentW, this._segmentH);
+		let indices = Plane.getIndices(this._widthSegment, this._heightSegment);
 		this._indexBuffer = new IndexArrayBuffer(this._gl, indices);
 
 		this._cnt = indices.length;
@@ -267,16 +267,16 @@ export class Plane extends EventEmitter {
 		return this;
 	}
 
-	static getVertices(width, height, segmentW, segmentH) {
+	static getVertices(width, height, widthSegment, heightSegment) {
 		let vertices = [];
-		let xRate = 1 / segmentW;
-		let yRate = 1 / segmentH;
+		let xRate = 1 / widthSegment;
+		let yRate = 1 / heightSegment;
 
 		// set vertices and barycentric vertices
-		for (let yy = 0; yy <= segmentH; yy++) {
+		for (let yy = 0; yy <= heightSegment; yy++) {
 			let yPos = (-0.5 + yRate * yy) * height;
 
-			for (let xx = 0; xx <= segmentW; xx++) {
+			for (let xx = 0; xx <= widthSegment; xx++) {
 				let xPos = (-0.5 + xRate * xx) * width;
 				vertices.push(xPos);
 				vertices.push(yPos);
@@ -287,13 +287,13 @@ export class Plane extends EventEmitter {
 		return vertices;
 	}
 
-	static getIndices(segmentW, segmentH) {
+	static getIndices(widthSegment, heightSegment) {
 		let indices = [];
 
-		for (let yy = 0; yy < segmentH; yy++) {
-			for (let xx = 0; xx < segmentW; xx++) {
-				let rowStartNum = yy * (segmentW + 1);
-				let nextRowStartNum = (yy + 1) * (segmentW + 1);
+		for (let yy = 0; yy < heightSegment; yy++) {
+			for (let xx = 0; xx < widthSegment; xx++) {
+				let rowStartNum = yy * (widthSegment + 1);
+				let nextRowStartNum = (yy + 1) * (widthSegment + 1);
 
 				indices.push(rowStartNum + xx);
 				indices.push(rowStartNum + xx + 1);
