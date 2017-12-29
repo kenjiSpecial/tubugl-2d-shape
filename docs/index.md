@@ -1,3 +1,5 @@
+GitHub: [https://github.com/kenjiSpecial/tubugl-2d-shape](https://github.com/kenjiSpecial/tubugl-2d-shape)
+
 ### [#00 - plane](./app00/index.html)
 
 [![](./app00/thumbnail.png)](./app00/index.html)
@@ -15,3 +17,5 @@
 [![](./app02/thumbnail.png)](./app02/index.html)
 
 [codes](https://github.com/kenjiSpecial/tubugl-2d-shape/tree/master/examples/app02) | [Source for texturePlane.js](https://github.com/kenjiSpecial/tubugl-2d-shape/blob/master/src/texturePlane.js)
+
+all examples were made with [tubugl](https://github.com/kenjiSpecial/tubugl)
