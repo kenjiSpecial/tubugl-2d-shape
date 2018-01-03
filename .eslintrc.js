@@ -8,14 +8,10 @@ module.exports = {
 	parserOptions: {
 		sourceType: 'module'
 	},
-	plugins: [
-		// "prettier",
-		// "eslint-plugin-prettier"
-	],
 	rules: {
+		'arrow-body-style': ['error', 'always'],
 		quotes: ['error', 'single'],
 		semi: ['error', 'always'],
 		'no-console': 'off'
-		// "prettier/prettier": "error"
 	}
 };

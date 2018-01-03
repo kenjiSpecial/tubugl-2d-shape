@@ -17,7 +17,8 @@ export default class App {
 		this._height = params.height ? params.height : window.innerHeight;
 
 		this.canvas = document.createElement('canvas');
-		this.gl = this.canvas.getContext('webgl');
+		this.gl = this.canvas.getContext('webgl2');
+		this._isGl2 = true;
 
 		this._makePlanes();
 		this._makeCamera();
@@ -40,22 +41,12 @@ export default class App {
 		if (this.stats) this.stats.update();
 
 		this.gl.clearColor(0, 0, 0, 1);
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
-		this._camera
-			.updatePosition(
-				this._camera.rad1 * Math.sin(this._camera.theta),
-				0,
-				this._camera.rad2 * Math.cos(this._camera.theta)
-			)
-			.lookAt([0, 0, 0]);
-
+		this._camera.update();
 		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
-		this._plane
-			.setPosition(100 * Math.cos(this._plane.rotTheta), 0, 0)
-			.setRotation(this._plane.rotTheta, 0, 0)
-			.update(this._camera)
-			.draw();
+
+		this._plane.render(this._camera);
 	}
 
 	animateOut() {
@@ -111,16 +102,21 @@ export default class App {
 	destroy() {}
 
 	_makePlanes() {
-		this._plane = new Plane(this.gl);
-		this._plane.posTheta = 0;
-		this._plane.rotTheta = 0;
+		this._plane = new Plane(
+			this.gl,
+			100, // width
+			100, // height
+			2, // width segment
+			2, // height segment
+			{
+				isGl2: this._isGl2
+			}
+		);
 	}
 
 	_makeCamera() {
-		this._camera = new PerspectiveCamera([0, 0, 500], [0, 0, 0]);
-		this._camera.theta = 0;
-		this._camera.rad1 = 800;
-		this._camera.rad2 = 800;
+		this._camera = new PerspectiveCamera();
+		this._camera.position.z = 600;
 	}
 
 	_addGui() {

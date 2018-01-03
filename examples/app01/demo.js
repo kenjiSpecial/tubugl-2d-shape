@@ -1,6 +1,8 @@
 'use strict';
 
-import App from './index';
+import App from './app';
+var urlParams = new URLSearchParams(window.location.search);
+const isDebug = !(urlParams.has('NoDebug') || urlParams.has('NoDebug/'));
 
 let app;
 
@@ -9,7 +11,7 @@ start();
 
 function init() {
 	app = new App({
-		isDebug: true
+		isDebug: isDebug
 	});
 
 	document.body.appendChild(app.canvas);

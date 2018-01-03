@@ -1,14 +1,20 @@
 {
   "name": "tubugl-2d-shape",
   "version": "1.0.0",
-  "description": "prototype tool with parcel",
+  "description": "2D shapes for tubugl",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "app0": "parcel examples/app0/index.html --no-hmr",
-    "app1": "parcel examples/app1/index.html --no-hmr",
-    "dist0": "parcel build docs/app0/index.html -d examples/dist/app0 --public-url ./",
-    "dist1": "parcel build docs/app1/index.html -d examples/dist/app1 --public-url ./"
+    "app00": "parcel examples/app00/index.html --no-hmr",
+    "app01": "parcel examples/app01/index.html --no-hmr",
+    "app02": "parcel examples/app02/index.html --no-hmr",
+    "dist00": "parcel build examples/app00/index.html -d docs/app00 --public-url ./",
+    "dist01": "parcel build examples/app01/index.html -d docs/app01 --public-url ./",
+    "dist02": "parcel build examples/app02/index.html -d docs/app02 --public-url ./",
+    "screenshot00": "node ./node/screenshot.js --dir=app00",
+    "screenshot01": "node ./node/screenshot.js --dir=app01",
+    "screenshot02": "node ./node/screenshot.js --dir=app02",
+    "docs": "python -m SimpleHTTPServer 8000"
   },
   "dependencies": {
     "dat.gui": "https://github.com/dataarts/dat.gui.git",
@@ -18,10 +24,14 @@
     "tubugl-camera": "^1.2.0",
     "tubugl-constants": "^1.0.3",
     "tubugl-core": "^1.1.3",
+    "tubugl-math": "^1.1.7",
+    "tubugl-utils": "^1.0.3",
     "wolfy87-eventemitter": "^5.2.4"
   },
   "devDependencies": {
-    "parcel-bundler": "^1.2.1",
-    "prettier": "^1.9.2"
+    "eslint": "^4.14.0",
+    "minimist": "^1.2.0",
+    "node-cmd": "^3.0.0",
+    "puppeteer": "^0.13.0"
   }
 }

@@ -4,7 +4,8 @@ import {
 	baseShaderFragSrc,
 	baseShaderVertSrc,
 	base2ShaderVertSrc,
-	base2ShaderFragSrc
+	base2ShaderFragSrc,
+	wireFrameFragSrc
 } from './shaders/base.shader';
 import { Program, ArrayBuffer, IndexArrayBuffer, VAO } from 'tubugl-core';
 import {
@@ -17,59 +18,51 @@ import {
 	SRC_ALPHA,
 	ONE,
 	ZERO,
-	BLEND
+	BLEND,
+	LINES
 } from 'tubugl-constants';
+import { generateWireframeIndices } from 'tubugl-utils';
+import { Vector3 } from 'tubugl-math/src/vector3';
+import { Euler } from 'tubugl-math/src/euler';
 
 export class Plane extends EventEmitter {
-	constructor(
-		gl,
-		width = 100,
-		height = 100,
-		segmentW = 1,
-		segmentH = 1,
-		position = [0, 0, 0],
-		rotation = [0, 0, 0],
-		scale = [1, 1, 1],
-		params = {}
-	) {
+	constructor(gl, width = 100, height = 100, widthSegment = 1, heightSegment = 1, params = {}) {
 		super();
 
-		this._position = new Float32Array(position);
-		this._rotation = new Float32Array(rotation);
-		this._scale = new Float32Array(scale);
+		this.position = new Vector3();
+		this.rotation = new Euler();
+		this.scale = new Vector3(1, 1, 1);
 
 		this._isGl2 = params.isGl2;
 		this._gl = gl;
 		this._side = params.side ? params.side : 'double'; // 'front', 'back', 'double'
 
-		const fragmentShaderSrc = params.fragmentShaderSrc
-			? params.fragmentShaderSrc
-			: this._isGl2 ? base2ShaderFragSrc : baseShaderFragSrc;
-		const vertexShaderSrc = params.vertexShaderSrc
-			? params.vertexShaderSrc
-			: this._isGl2 ? base2ShaderVertSrc : baseShaderVertSrc;
-
 		this._width = width;
 		this._height = height;
-		this._segmentW = segmentW;
-		this._segmentH = segmentH;
+		this._widthSegment = widthSegment;
+		this._heightSegment = heightSegment;
 
-		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 		this._modelMatrix = mat4.create();
 		this._isNeedUpdate = true;
 		this._isWire = !!params.isWire;
 		this._isDepthTest = !!params.isDepthTest;
 		this._isTransparent = !!params.isTransparent;
 
-		this._makBuffer();
+		this._makeProgram(params);
+		this._makeBuffer();
+
+		if (this._isWire) {
+			this._makeWireframe();
+			this._makeWireframeBuffer();
+		}
 	}
 
 	setPosition(x, y, z) {
 		this._isNeedUpdate = true;
 
-		if (x !== undefined) this._position[0] = x;
-		if (y !== undefined) this._position[1] = y;
-		if (z !== undefined) this._position[2] = z;
+		if (x !== undefined) this.position.x = x;
+		if (y !== undefined) this.position.y = y;
+		if (z !== undefined) this.position.z = z;
 
 		return this;
 	}
@@ -77,44 +70,69 @@ export class Plane extends EventEmitter {
 	setRotation(x, y, z) {
 		this._isNeedUpdate = true;
 
-		if (x !== undefined) this._rotation[0] = x;
-		if (y !== undefined) this._rotation[1] = y;
-		if (z !== undefined) this._rotation[2] = z;
+		if (x !== undefined) this.rotation.x = x;
+		if (y !== undefined) this.rotation.y = y;
+		if (z !== undefined) this.rotation.z = z;
 
 		return this;
 	}
 
-	_makBuffer() {
+	_makeProgram(params) {
+		const fragmentShaderSrc = params.fragmentShaderSrc
+			? params.fragmentShaderSrc
+			: this._isGl2 ? base2ShaderFragSrc : baseShaderFragSrc;
+		const vertexShaderSrc = params.vertexShaderSrc
+			? params.vertexShaderSrc
+			: this._isGl2 ? base2ShaderVertSrc : baseShaderVertSrc;
+
+		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
+	}
+
+	_makeWireframe() {
+		this._wireframeProgram = new Program(this._gl, baseShaderVertSrc, wireFrameFragSrc);
+	}
+
+	_makeBuffer() {
 		if (this._isGl2) {
 			this._vao = new VAO(this._gl);
 			this._vao.bind();
 		}
 		this._positionBuffer = new ArrayBuffer(
 			this._gl,
-			this._getVertices(
-				this._width,
-				this._height,
-				this._segmentW,
-				this._segmentH
-			)
+			Plane.getVertices(this._width, this._height, this._widthSegment, this._heightSegment)
 		);
 		this._positionBuffer.setAttribs('position', 2);
 
-		this._barycentricPositionBuffer = new ArrayBuffer(
-			this._gl,
-			this._getBarycentricVertices(this._segmentW, this._segmentH)
-		);
-		this._barycentricPositionBuffer.setAttribs('barycentricPosition', 3);
-
 		if (this._vao) {
 			this._positionBuffer.bind().attribPointer(this._program);
-			this._barycentricPositionBuffer.bind().attribPointer(this._program);
 		}
 
-		let indices = this._getIndices(this._segmentW, this._segmentH);
+		let indices = Plane.getIndices(this._widthSegment, this._heightSegment);
 		this._indexBuffer = new IndexArrayBuffer(this._gl, indices);
 
 		this._cnt = indices.length;
+	}
+
+	_makeWireframeBuffer() {
+		this._wireframeIndexBuffer = new IndexArrayBuffer(
+			this._gl,
+			generateWireframeIndices(this._indexBuffer.dataArray)
+		);
+		this._wireframeIndexCnt = this._wireframeIndexBuffer.dataArray.length;
+	}
+
+	_updateAttributres() {
+		if (this._vao) {
+			this._vao.bind();
+		} else {
+			this._positionBuffer.bind().attribPointer(this._program);
+			this._indexBuffer.bind();
+		}
+	}
+
+	render(camera) {
+		this.update(camera).draw();
+		if (this._isWire) this.updateWire(camera).drawWireframe();
 	}
 
 	update(camera) {
@@ -122,18 +140,8 @@ export class Plane extends EventEmitter {
 
 		this._program.bind();
 
-		if (this._vao) {
-			this._vao.bind();
-		} else {
-			this._positionBuffer.bind().attribPointer(this._program);
-			this._barycentricPositionBuffer.bind().attribPointer(this._program);
-			this._indexBuffer.bind();
-		}
+		this._updateAttributres();
 
-		this._gl.uniform1f(
-			this._program.getUniforms('uWireframe').location,
-			this._isWire
-		);
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('modelMatrix').location,
 			false,
@@ -146,6 +154,28 @@ export class Plane extends EventEmitter {
 		);
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('projectionMatrix').location,
+			false,
+			camera.projectionMatrix
+		);
+
+		return this;
+	}
+
+	updateWire(camera) {
+		let prg = this._wireframeProgram;
+
+		prg.bind();
+		this._positionBuffer.bind().attribPointer(prg);
+		this._wireframeIndexBuffer.bind();
+
+		this._gl.uniformMatrix4fv(
+			prg.getUniforms('modelMatrix').location,
+			false,
+			this._modelMatrix
+		);
+		this._gl.uniformMatrix4fv(prg.getUniforms('viewMatrix').location, false, camera.viewMatrix);
+		this._gl.uniformMatrix4fv(
+			prg.getUniforms('projectionMatrix').location,
 			false,
 			camera.projectionMatrix
 		);
@@ -180,37 +210,73 @@ export class Plane extends EventEmitter {
 		return this;
 	}
 
+	drawWireframe() {
+		this._gl.drawElements(LINES, this._wireframeIndexCnt, UNSIGNED_SHORT, 0);
+
+		return;
+	}
+
 	resize() {}
 
 	addGui(gui) {
-		gui.add(this, '_isWire').name('isWire');
+		let positionFolder = gui.addFolder('position');
+		positionFolder.add(this.position, 'x', -200, 200);
+		positionFolder.add(this.position, 'y', -200, 200);
+		positionFolder.add(this.position, 'z', -200, 200);
+
+		let scaleFolder = gui.addFolder('scale');
+		scaleFolder.add(this.scale, 'x', 0.05, 2).step(0.01);
+		scaleFolder.add(this.scale, 'y', 0.05, 2).step(0.01);
+		scaleFolder.add(this.scale, 'z', 0.05, 2).step(0.01);
+
+		let rotationFolder = gui.addFolder('rotation');
+		rotationFolder.add(this.rotation, 'x', -Math.PI, Math.PI).step(0.01);
+		rotationFolder.add(this.rotation, 'y', -Math.PI, Math.PI).step(0.01);
+		rotationFolder.add(this.rotation, 'z', -Math.PI, Math.PI).step(0.01);
+
+		gui
+			.add(this, '_isWire')
+			.name('isWire')
+			.onChange(() => {
+				if (this._isWire && !this._wireframeProgram) {
+					this._makeWireframe();
+					this._makeWireframeBuffer();
+				}
+			});
 	}
 
 	_updateModelMatrix() {
-		if (!this._isNeedUpdate) return;
+		if (
+			!this._isNeedUpdate &&
+			!this.position.needsUpdate &&
+			!this.rotation.needsMatrixUpdate &&
+			!this.scale.needsUpdate
+		)
+			return;
 
-		mat4.fromTranslation(this._modelMatrix, this._position);
-		mat4.scale(this._modelMatrix, this._modelMatrix, this._scale);
+		mat4.fromTranslation(this._modelMatrix, this.position.array);
+		mat4.scale(this._modelMatrix, this._modelMatrix, this.scale.array);
 
-		mat4.rotateX(this._modelMatrix, this._modelMatrix, this._rotation[0]);
-		mat4.rotateY(this._modelMatrix, this._modelMatrix, this._rotation[1]);
-		mat4.rotateZ(this._modelMatrix, this._modelMatrix, this._rotation[2]);
+		this.rotation.updateMatrix();
+		mat4.multiply(this._modelMatrix, this._modelMatrix, this.rotation.matrix);
 
 		this._isNeedUpdate = false;
+		this.position.needsUpdate = false;
+		this.scale.needsUpdate = false;
 
 		return this;
 	}
 
-	_getVertices(width, height, segmentW, segmentH) {
+	static getVertices(width, height, widthSegment, heightSegment) {
 		let vertices = [];
-		let xRate = 1 / segmentW;
-		let yRate = 1 / segmentH;
+		let xRate = 1 / widthSegment;
+		let yRate = 1 / heightSegment;
 
 		// set vertices and barycentric vertices
-		for (let yy = 0; yy <= segmentH; yy++) {
+		for (let yy = 0; yy <= heightSegment; yy++) {
 			let yPos = (-0.5 + yRate * yy) * height;
 
-			for (let xx = 0; xx <= segmentW; xx++) {
+			for (let xx = 0; xx <= widthSegment; xx++) {
 				let xPos = (-0.5 + xRate * xx) * width;
 				vertices.push(xPos);
 				vertices.push(yPos);
@@ -221,45 +287,13 @@ export class Plane extends EventEmitter {
 		return vertices;
 	}
 
-	_getBarycentricVertices(segmentW, segmentH) {
-		let barycentricVertices = [];
-		let barycentricId;
-
-		for (let yy = 0; yy <= segmentH; yy++) {
-			for (let xx = 0; xx <= segmentW; xx++) {
-				barycentricId = 2 * yy + xx;
-				switch (barycentricId % 3) {
-					case 0:
-						barycentricVertices.push(1);
-						barycentricVertices.push(0);
-						barycentricVertices.push(0);
-						break;
-					case 1:
-						barycentricVertices.push(0);
-						barycentricVertices.push(1);
-						barycentricVertices.push(0);
-						break;
-					case 2:
-						barycentricVertices.push(0);
-						barycentricVertices.push(0);
-						barycentricVertices.push(1);
-						break;
-				}
-			}
-		}
-
-		barycentricVertices = new Float32Array(barycentricVertices);
-
-		return barycentricVertices;
-	}
-
-	_getIndices(segmentW, segmentH) {
+	static getIndices(widthSegment, heightSegment) {
 		let indices = [];
 
-		for (let yy = 0; yy < segmentH; yy++) {
-			for (let xx = 0; xx < segmentW; xx++) {
-				let rowStartNum = yy * (segmentW + 1);
-				let nextRowStartNum = (yy + 1) * (segmentW + 1);
+		for (let yy = 0; yy < heightSegment; yy++) {
+			for (let xx = 0; xx < widthSegment; xx++) {
+				let rowStartNum = yy * (widthSegment + 1);
+				let nextRowStartNum = (yy + 1) * (widthSegment + 1);
 
 				indices.push(rowStartNum + xx);
 				indices.push(rowStartNum + xx + 1);
