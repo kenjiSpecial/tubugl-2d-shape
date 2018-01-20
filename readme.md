@@ -2,7 +2,7 @@
 
 [![NPM version][npm-image]][npm-url] 
 
-2D basic shape for [tubugl](https://github.com/kenjiSpecial/tubugl)
+2D basic shape made with [tubugl](https://github.com/kenjiSpecial/tubugl)
 
 
 ## install
@@ -22,10 +22,22 @@ yarn add tubugl-2d-shape
 
 https://kenjispecial.github.io/tubugl-2d-shape/
 
+## Running the examples locally
+
+you need to install [parcel](https://github.com/parcel-bundler/parcel) to run examples locally
+
+install node modules locally
+
+```sh
+yarn
+yarn run
+```
 
 ## TODO
 
 - [x] tweak wire frame mode
+
+- [x] support texture
 
 - [ ] add more examples
 
