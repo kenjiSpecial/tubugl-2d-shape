@@ -21,7 +21,6 @@ export class UvPlane extends Plane {
 			? params.fragmentShaderSrc
 			: this._isGl2 ? base2ShaderFragSrc : uvBaseShaderFragSrc;
 
-		console.log(vertexShaderSrc, fragmentShaderSrc);
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 	}
 	_updateAttributres() {
@@ -36,10 +35,7 @@ export class UvPlane extends Plane {
 	_makeBuffer() {
 		super._makeBuffer();
 
-		this._uvBuffer = new ArrayBuffer(
-			this._gl,
-			UvPlane.getUvs(this._widthSegment, this._heightSegment)
-		);
+		this._uvBuffer = new ArrayBuffer(this._gl, UvPlane.getUvs(this._segmentW, this._segmentH));
 		this._uvBuffer.setAttribs('uv', 2);
 	}
 	static getUvs(widthSegment, heightSegment) {
