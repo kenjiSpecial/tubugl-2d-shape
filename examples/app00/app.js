@@ -104,7 +104,7 @@ export default class App {
 	destroy() {}
 
 	_makePlanes() {
-		this._plane = new Plane(this.gl, 200, 200, 20, 20);
+		this._plane = new Plane(this.gl, {}, 200, 200, 20, 20);
 		this._plane.posTheta = 0;
 		this._plane.rotTheta = 0;
 	}

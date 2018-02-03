@@ -3,8 +3,8 @@ import { Program } from 'tubugl-core/src/program';
 import { uvBaseShaderVertSrc, textureBaseShaderFragSrc } from './shaders/base.shader';
 
 export class TexturePlane extends UvPlane {
-	constructor(gl, width = 100, height = 100, segmentW = 1, segmentH = 1, params = {}) {
-		super(gl, width, height, segmentW, segmentH, params);
+	constructor(gl, params = {}, width = 100, height = 100, segmentW = 1, segmentH = 1) {
+		super(gl, params, width, height, segmentW, segmentH);
 
 		this._textures = params.textures;
 	}
@@ -14,7 +14,7 @@ export class TexturePlane extends UvPlane {
 
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 	}
-	_updateAttributres() {
+	_updateAttributes() {
 		if (this._vao) {
 			this._vao.bind();
 		} else {
@@ -26,9 +26,9 @@ export class TexturePlane extends UvPlane {
 	update(camera) {
 		super.update(camera);
 
-		this._textures.forEach(texture => {
-			this._program.setUniformTexture(texture);
-			texture.activeTexture().bind();
+		this._textures.forEach(textureData => {
+			this._program.setUniformTexture(textureData.texture, textureData.name);
+			textureData.texture.activeTexture().bind();
 		});
 
 		return this;

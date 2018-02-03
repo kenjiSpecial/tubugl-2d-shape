@@ -26,7 +26,7 @@ import { Vector3 } from 'tubugl-math/src/vector3';
 import { Euler } from 'tubugl-math/src/euler';
 
 export class Plane extends EventEmitter {
-	constructor(gl, width = 100, height = 100, widthSegment = 1, heightSegment = 1, params = {}) {
+	constructor(gl, params = {}, width = 100, height = 100, widthSegment = 1, heightSegment = 1) {
 		super();
 
 		this.position = new Vector3();
@@ -126,7 +126,7 @@ export class Plane extends EventEmitter {
 		this._wireframeIndexCnt = this._wireframeIndexBuffer.dataArray.length;
 	}
 
-	_updateAttributres() {
+	_updateAttributes() {
 		if (this._vao) {
 			this._vao.bind();
 		} else {
@@ -145,7 +145,7 @@ export class Plane extends EventEmitter {
 
 		this._program.bind();
 
-		this._updateAttributres();
+		this._updateAttributes();
 
 		this._gl.uniformMatrix4fv(
 			this._program.getUniforms('modelMatrix').location,

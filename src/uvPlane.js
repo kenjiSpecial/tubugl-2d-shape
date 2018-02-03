@@ -9,8 +9,8 @@ import {
 } from './shaders/base.shader';
 
 export class UvPlane extends Plane {
-	constructor(gl, width = 100, height = 100, segmentW = 1, segmentH = 1, params = {}) {
-		super(gl, width, height, segmentW, segmentH, params);
+	constructor(gl, params = {}, width = 100, height = 100, segmentW = 1, segmentH = 1) {
+		super(gl, params, width, height, segmentW, segmentH);
 	}
 	_makeProgram(params) {
 		const vertexShaderSrc = params.vertexShaderSrc
@@ -24,7 +24,7 @@ export class UvPlane extends Plane {
 		console.log(vertexShaderSrc, fragmentShaderSrc);
 		this._program = new Program(this._gl, vertexShaderSrc, fragmentShaderSrc);
 	}
-	_updateAttributres() {
+	_updateAttributes() {
 		if (this._vao) {
 			this._vao.bind();
 		} else {

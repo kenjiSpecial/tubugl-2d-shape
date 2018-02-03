@@ -36,13 +36,13 @@ export default class App {
 	}
 
 	_loaded() {
-		this._texture = new Texture(this.gl, 'uTexture');
+		this._texture = new Texture(this.gl);
 		this._texture
 			.bind()
 			.fromImage(this._image, this._image.width, this._image.height)
 			.generateMipmap();
 
-		this._uvTexture = new Texture(this.gl, 'uvTexture');
+		this._uvTexture = new Texture(this.gl);
 		this._uvTexture
 			.bind()
 			.fromImage(this._uvImage, this._uvImage.width, this._uvImage.height)
@@ -141,9 +141,19 @@ export default class App {
 	destroy() {}
 
 	_makePlanes() {
-		this._plane = new TexturePlane(this.gl, 200, 200, 20, 20, {
-			textures: [this._texture, this._uvTexture]
-		});
+		this._plane = new TexturePlane(
+			this.gl,
+			{
+				textures: [
+					{ name: 'uTexture', texture: this._texture },
+					{ name: 'uvTexture', texture: this._uvTexture }
+				]
+			},
+			200,
+			200,
+			20,
+			20
+		);
 	}
 
 	_makeCamera() {

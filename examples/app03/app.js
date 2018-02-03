@@ -117,8 +117,8 @@ export default class App {
 
 	_makePlanes() {
 		this._rotTheta = 0;
-		this._plane = new Plane(this.gl, 40, 40, 5, 5);
-		this._plane2 = new Plane(this.gl, 40, 40, 5, 5);
+		this._plane = new Plane(this.gl, {}, 40, 40, 5, 5);
+		this._plane2 = new Plane(this.gl, {}, 40, 40, 5, 5);
 	}
 
 	_makeCamera() {

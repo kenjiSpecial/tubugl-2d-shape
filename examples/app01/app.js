@@ -104,13 +104,13 @@ export default class App {
 	_makePlanes() {
 		this._plane = new Plane(
 			this.gl,
+			{
+				isGl2: this._isGl2
+			},
 			100, // width
 			100, // height
 			2, // width segment
-			2, // height segment
-			{
-				isGl2: this._isGl2
-			}
+			2 // height segment
 		);
 	}
 
