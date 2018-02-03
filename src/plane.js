@@ -47,6 +47,7 @@ export class Plane extends EventEmitter {
 		this._isWire = !!params.isWire;
 		this._isDepthTest = params.isDepthTest == undefined ? true : !!params.isDepthTest;
 		this._isTransparent = !!params.isTransparent;
+		this.disableUpdateModelMatrix = !!params.disableUpdateModelMatrix;
 
 		this._makeProgram(params);
 		this._makeBuffer();
@@ -55,6 +56,10 @@ export class Plane extends EventEmitter {
 			this._makeWireframe();
 			this._makeWireframeBuffer();
 		}
+	}
+
+	updateModelMatrix(matrix) {
+		this._modelMatrix = matrix;
 	}
 
 	setPosition(x, y, z) {
@@ -136,7 +141,7 @@ export class Plane extends EventEmitter {
 	}
 
 	update(camera) {
-		this._updateModelMatrix();
+		if (!this.disableUpdateModelMatrix) this._updateModelMatrix();
 
 		this._program.bind();
 

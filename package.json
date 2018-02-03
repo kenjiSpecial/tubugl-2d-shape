@@ -1,6 +1,6 @@
 {
   "name": "tubugl-2d-shape",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "2D shapes for tubugl",
   "main": "index.js",
   "license": "MIT",
