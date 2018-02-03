@@ -220,19 +220,37 @@ export class Plane extends EventEmitter {
 
 	addGui(gui) {
 		let positionFolder = gui.addFolder('position');
-		positionFolder.add(this.position, 'x', -200, 200);
-		positionFolder.add(this.position, 'y', -200, 200);
-		positionFolder.add(this.position, 'z', -200, 200);
+		positionFolder.add(this.position, 'x', -200, 200).listen();
+		positionFolder.add(this.position, 'y', -200, 200).listen();
+		positionFolder.add(this.position, 'z', -200, 200).listen();
 
 		let scaleFolder = gui.addFolder('scale');
-		scaleFolder.add(this.scale, 'x', 0.05, 2).step(0.01);
-		scaleFolder.add(this.scale, 'y', 0.05, 2).step(0.01);
-		scaleFolder.add(this.scale, 'z', 0.05, 2).step(0.01);
+		scaleFolder
+			.add(this.scale, 'x', 0.05, 2)
+			.step(0.01)
+			.listen();
+		scaleFolder
+			.add(this.scale, 'y', 0.05, 2)
+			.step(0.01)
+			.listen();
+		scaleFolder
+			.add(this.scale, 'z', 0.05, 2)
+			.step(0.01)
+			.listen();
 
 		let rotationFolder = gui.addFolder('rotation');
-		rotationFolder.add(this.rotation, 'x', -Math.PI, Math.PI).step(0.01);
-		rotationFolder.add(this.rotation, 'y', -Math.PI, Math.PI).step(0.01);
-		rotationFolder.add(this.rotation, 'z', -Math.PI, Math.PI).step(0.01);
+		rotationFolder
+			.add(this.rotation, 'x', -Math.PI, Math.PI)
+			.step(0.01)
+			.listen();
+		rotationFolder
+			.add(this.rotation, 'y', -Math.PI, Math.PI)
+			.step(0.01)
+			.listen();
+		rotationFolder
+			.add(this.rotation, 'z', -Math.PI, Math.PI)
+			.step(0.01)
+			.listen();
 
 		gui
 			.add(this, '_isWire')
@@ -244,8 +262,20 @@ export class Plane extends EventEmitter {
 				}
 			});
 	}
+	/**
+	 *
+	 * @param {Array}targetPosition
+	 */
+	lookAt(targetPosition) {
+		mat4.lookAt(this.rotation.matrix, this.position.array, targetPosition, [0, 1, 0]);
+		mat4.invert(this.rotation.matrix, this.rotation.matrix);
+		this.rotation.setFromRotationMatrix(this.rotation.matrix);
+
+		return this;
+	}
 
 	_updateModelMatrix() {
+		// console.log(this._isNeedUpdate);
 		if (
 			!this._isNeedUpdate &&
 			!this.position.needsUpdate &&

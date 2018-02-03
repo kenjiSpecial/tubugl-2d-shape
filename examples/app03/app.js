@@ -8,12 +8,11 @@ const Stats = require('stats.js');
 
 import { Plane } from '../../index';
 import { PerspectiveCamera, CameraController } from 'tubugl-camera';
-import { mat4 } from 'gl-matrix/src/gl-matrix';
 
 export default class App {
 	constructor(params = {}) {
 		this._isMouseDown = false;
-		this._isPlaneAnimation = false;
+		this._isPlaneAnimation = true;
 		this._width = params.width ? params.width : window.innerWidth;
 		this._height = params.height ? params.height : window.innerHeight;
 
@@ -42,11 +41,16 @@ export default class App {
 		if (this.stats) this.stats.update();
 
 		this.gl.clearColor(0, 0, 0, 1);
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
 
 		this._camera.update();
-		if (this._isPlaneAnimation) this._plane.rotTheta += 1 / 30;
 
+		if (this._isPlaneAnimation) {
+			this._rotTheta += 1 / 60;
+			this._plane.position.x = Math.cos(this._rotTheta) * 300;
+			this._plane.position.z = Math.sin(this._rotTheta) * 300;
+			this._plane.lookAt([0, 0, 0]);
+		}
 		this._plane.render(this._camera);
 	}
 
@@ -104,13 +108,12 @@ export default class App {
 	destroy() {}
 
 	_makePlanes() {
-		this._plane = new Plane(this.gl, 200, 200, 20, 20);
-		this._plane.posTheta = 0;
-		this._plane.rotTheta = 0;
+		this._rotTheta = 0;
+		this._plane = new Plane(this.gl, 40, 40, 5, 5);
 	}
 
 	_makeCamera() {
-		this._camera = new PerspectiveCamera();
+		this._camera = new PerspectiveCamera(window.innerWidth, window.innerHeight, 60, 1, 2000);
 		this._camera.position.z = 800;
 	}
 	_makeCameraController() {

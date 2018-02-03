@@ -18,4 +18,10 @@ GitHub: [https://github.com/kenjiSpecial/tubugl-2d-shape](https://github.com/ken
 
 [codes](https://github.com/kenjiSpecial/tubugl-2d-shape/tree/master/examples/app02) | [Source for texturePlane.js](https://github.com/kenjiSpecial/tubugl-2d-shape/blob/master/src/texturePlane.js)
 
+### [#03 - plane which focus on specific position](./app03/index.html)
+
+[![](./app03/thumbnail.png)](./app03/index.html)
+
+[codes](https://github.com/kenjiSpecial/tubugl-2d-shape/tree/master/examples/app03) 
+
 all examples were made with [tubugl](https://github.com/kenjiSpecial/tubugl)
