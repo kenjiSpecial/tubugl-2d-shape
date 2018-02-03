@@ -52,6 +52,13 @@ export default class App {
 			this._plane.lookAt([0, 0, 0]);
 		}
 		this._plane.render(this._camera);
+
+		this._plane2.lookAt([
+			this._plane.position.x,
+			this._plane.position.y,
+			this._plane.position.z
+		]);
+		this._plane2.render(this._camera);
 	}
 
 	animateOut() {
@@ -102,6 +109,7 @@ export default class App {
 		this.gl.viewport(0, 0, this._width, this._height);
 
 		this._plane.resize(this._width, this._height);
+		this._plane2.resize(this._width, this._height);
 		this._camera.updateSize(this._width, this._height);
 	}
 
@@ -110,6 +118,7 @@ export default class App {
 	_makePlanes() {
 		this._rotTheta = 0;
 		this._plane = new Plane(this.gl, 40, 40, 5, 5);
+		this._plane2 = new Plane(this.gl, 40, 40, 5, 5);
 	}
 
 	_makeCamera() {

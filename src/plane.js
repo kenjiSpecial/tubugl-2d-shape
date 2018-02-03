@@ -45,7 +45,7 @@ export class Plane extends EventEmitter {
 		this._modelMatrix = mat4.create();
 		this._isNeedUpdate = true;
 		this._isWire = !!params.isWire;
-		this._isDepthTest = !!params.isDepthTest;
+		this._isDepthTest = params.isDepthTest == undefined ? true : !!params.isDepthTest;
 		this._isTransparent = !!params.isTransparent;
 
 		this._makeProgram(params);
@@ -267,8 +267,9 @@ export class Plane extends EventEmitter {
 	 * @param {Array}targetPosition
 	 */
 	lookAt(targetPosition) {
-		mat4.lookAt(this.rotation.matrix, this.position.array, targetPosition, [0, 1, 0]);
-		mat4.invert(this.rotation.matrix, this.rotation.matrix);
+		mat4.lookAt(this.rotation.matrix, targetPosition, this.position.array, [0, 1, 0]);
+		mat4.invert(this.rotation.matrix, this.rotation.matrix); // TODO: why I need invert matrix
+
 		this.rotation.setFromRotationMatrix(this.rotation.matrix);
 
 		return this;
