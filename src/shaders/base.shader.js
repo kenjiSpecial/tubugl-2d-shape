@@ -62,7 +62,6 @@ void main(){
         gl_FragColor = texture2D(uvTexture, vUv);
     }
 }
-
 `;
 
 export const wireFrameFragSrc = `

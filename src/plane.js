@@ -19,7 +19,8 @@ import {
 	ONE,
 	ZERO,
 	BLEND,
-	LINES
+	LINES,
+	ONE_MINUS_SRC_ALPHA
 } from 'tubugl-constants';
 import { generateWireframeIndices } from 'tubugl-utils';
 import { Vector3 } from 'tubugl-math/src/vector3';
@@ -203,10 +204,10 @@ export class Plane extends EventEmitter {
 		else this._gl.disable(DEPTH_TEST);
 
 		if (this._isTransparent) {
-			this._gl.blendFunc(SRC_ALPHA, ONE);
+			this._gl.blendFunc(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
 			this._gl.enable(BLEND);
 		} else {
-			this._gl.blendFunc(SRC_ALPHA, ZERO);
+			this._gl.blendFunc(ONE, ZERO);
 			this._gl.disable(BLEND);
 		}
 
