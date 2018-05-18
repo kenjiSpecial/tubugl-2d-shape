@@ -4,12 +4,12 @@
 
 const dat = require('../vendor/dat.gui.min');
 const TweenLite = require('gsap/TweenLite');
-const Stats = require('stats.js');
+const Stats = require('../vendor/stats.min');
 
 import imageURL from '../assets/image.jpg';
 import uvImageURL from '../assets/uv_img.jpg';
 
-import { TexturePlane } from '../../index';
+import { TexturePlane } from '../../src/index';
 
 import { PerspectiveCamera, CameraController } from 'tubugl-camera';
 import { Texture } from 'tubugl-core/src/texture';

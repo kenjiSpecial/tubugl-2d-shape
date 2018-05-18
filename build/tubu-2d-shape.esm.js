@@ -1,18 +1,123 @@
-const EventEmitter = require('wolfy87-eventemitter');
 import { mat4 } from 'gl-matrix/src/gl-matrix';
-import {
-	baseShaderFragSrc,
-	baseShaderVertSrc,
-	base2ShaderVertSrc,
-	base2ShaderFragSrc,
-	wireFrameFragSrc
-} from './shaders/base.shader';
 import { Program, ArrayBuffer, IndexArrayBuffer, VAO } from 'tubugl-core';
 import { generateWireframeIndices } from 'tubugl-utils';
 import { Vector3 } from 'tubugl-math/src/vector3';
 import { Euler } from 'tubugl-math/src/euler';
+import { ArrayBuffer as ArrayBuffer$1 } from 'tubugl-core/src/arrayBuffer';
+import { Program as Program$1 } from 'tubugl-core/src/program';
 
-export class Plane extends EventEmitter {
+const baseShaderVertSrc = `
+attribute vec4 position;
+
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
+
+void main() {
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * position;
+}`;
+
+const baseShaderFragSrc = `
+precision mediump float;
+
+void main() {
+    float colorR = gl_FrontFacing ? 1.0 : 0.0;
+    float colorG = gl_FrontFacing ? 0.0 : 1.0;
+    
+    gl_FragColor = vec4(colorR, colorG, 0.0, 1.0);
+
+}`;
+
+const uvBaseShaderVertSrc = `
+attribute vec4 position;
+attribute vec2 uv;
+
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
+
+varying vec2 vUv;
+void main(){
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * position;
+    vUv = uv;
+}
+`;
+
+const uvBaseShaderFragSrc = `
+precision mediump float;
+
+varying vec2 vUv;
+void main() {
+    float colorR = gl_FrontFacing ? 1.0 : 0.0;
+    
+    gl_FragColor = vec4(vUv, colorR, 1.0);
+
+}
+`;
+
+const textureBaseShaderFragSrc = `
+precision mediump float;
+
+uniform sampler2D uTexture;
+uniform sampler2D uvTexture;
+
+varying vec2 vUv;
+
+void main(){
+    if(gl_FrontFacing){
+        gl_FragColor = texture2D(uTexture, vUv);
+    }else{
+        gl_FragColor = texture2D(uvTexture, vUv);
+    }
+}
+`;
+
+const wireFrameFragSrc = `
+precision mediump float;
+
+void main(){
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+}
+`;
+
+const base2ShaderVertSrc = `#version 300 es
+in vec4 position;
+in vec3 barycentricPosition;
+
+uniform mat4 projectionMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 modelMatrix;
+
+out vec3 vBarycentricPosition;
+
+void main() {
+    gl_Position = projectionMatrix * viewMatrix * modelMatrix * position;
+    
+    vBarycentricPosition = barycentricPosition; 
+}
+`;
+
+const base2ShaderFragSrc = `#version 300 es
+precision mediump float;
+in vec3 vBarycentricPosition;
+
+uniform bool uWireframe;
+
+out vec4 outColor;
+
+void main() {
+
+    if(uWireframe){
+        float minBarycentricVal = min(min(vBarycentricPosition.x, vBarycentricPosition.y), vBarycentricPosition.z);
+        if(minBarycentricVal > 0.01) discard;
+    }
+    
+    outColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+`;
+
+const EventEmitter = require('wolfy87-eventemitter');
+class Plane extends EventEmitter {
 	constructor(gl, params = {}, width = 100, height = 100, widthSegment = 1, heightSegment = 1) {
 		super();
 
@@ -333,3 +438,93 @@ export class Plane extends EventEmitter {
 		return indices;
 	}
 }
+
+class UvPlane extends Plane {
+	constructor(gl, params = {}, width = 100, height = 100, segmentW = 1, segmentH = 1) {
+		super(gl, params, width, height, segmentW, segmentH);
+	}
+	_makeProgram(params) {
+		const vertexShaderSrc = params.vertexShaderSrc
+			? params.vertexShaderSrc
+			: this._isGl2 ? base2ShaderVertSrc : uvBaseShaderVertSrc;
+
+		const fragmentShaderSrc = params.fragmentShaderSrc
+			? params.fragmentShaderSrc
+			: this._isGl2 ? base2ShaderFragSrc : uvBaseShaderFragSrc;
+
+		console.log(vertexShaderSrc, fragmentShaderSrc);
+		this._program = new Program$1(this._gl, vertexShaderSrc, fragmentShaderSrc);
+	}
+	_updateAttributes() {
+		if (this._vao) {
+			this._vao.bind();
+		} else {
+			this._positionBuffer.bind().attribPointer(this._program);
+			this._uvBuffer.bind().attribPointer(this._program);
+			this._indexBuffer.bind();
+		}
+	}
+	_makeBuffer() {
+		super._makeBuffer();
+
+		this._uvBuffer = new ArrayBuffer$1(
+			this._gl,
+			UvPlane.getUvs(this._widthSegment, this._heightSegment)
+		);
+		this._uvBuffer.setAttribs('uv', 2);
+	}
+	static getUvs(widthSegment, heightSegment) {
+		let uvs = [];
+		let xRate = 1 / widthSegment;
+		let yRate = 1 / heightSegment;
+
+		for (let yy = 0; yy <= heightSegment; yy++) {
+			let uvY = 1.0 - yRate * yy;
+			for (let xx = 0; xx <= widthSegment; xx++) {
+				let uvX = xRate * xx;
+
+				uvs.push(uvX);
+				uvs.push(uvY);
+			}
+		}
+
+		uvs = new Float32Array(uvs);
+
+		return uvs;
+	}
+}
+
+class TexturePlane extends UvPlane {
+	constructor(gl, params = {}, width = 100, height = 100, segmentW = 1, segmentH = 1) {
+		super(gl, params, width, height, segmentW, segmentH);
+
+		this._textures = params.textures;
+	}
+	_makeProgram() {
+		const vertexShaderSrc = uvBaseShaderVertSrc;
+		const fragmentShaderSrc = textureBaseShaderFragSrc;
+
+		this._program = new Program$1(this._gl, vertexShaderSrc, fragmentShaderSrc);
+	}
+	_updateAttributes() {
+		if (this._vao) {
+			this._vao.bind();
+		} else {
+			this._positionBuffer.bind().attribPointer(this._program);
+			this._uvBuffer.bind().attribPointer(this._program);
+			this._indexBuffer.bind();
+		}
+	}
+	update(camera) {
+		super.update(camera);
+
+		this._textures.forEach(textureData => {
+			this._program.setUniformTexture(textureData.texture, textureData.name);
+			textureData.texture.activeTexture().bind();
+		});
+
+		return this;
+	}
+}
+
+export { Plane, UvPlane, TexturePlane };

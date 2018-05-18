@@ -4,9 +4,9 @@
 
 const dat = require('../vendor/dat.gui.min');
 const TweenLite = require('gsap/TweenLite');
-const Stats = require('stats.js');
+const Stats = require('../vendor/stats.min');
 
-import { Plane } from '../../index';
+import { Plane } from '../../src/plane';
 import { PerspectiveCamera } from 'tubugl-camera';
 
 export default class App {
